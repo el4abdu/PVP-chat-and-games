@@ -48,9 +48,29 @@ export const registerUser = async (email, password, username, gender, age, avata
     // Send email verification
     await sendEmailVerification(user);
     
+    // Check if there's a saved redirect path
+    const savedRedirect = localStorage.getItem('redirectAfterLogin');
+    if (savedRedirect && savedRedirect.includes('chat.html')) {
+      window.location.href = savedRedirect;
+      localStorage.removeItem('redirectAfterLogin');
+    } else {
+      window.location.href = 'chat.html';
+    }
+    
     return { success: true, user };
   } catch (error) {
     console.error('Registration error:', error);
+    let errorMessage = 'Registration failed. Please try again.';
+    
+    if (error.code === 'auth/email-already-in-use') {
+      errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Invalid email format. Please enter a valid email address.';
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = 'Password is too weak. Please use a stronger password with at least 6 characters.';
+    }
+    
+    showToast(errorMessage, 'error');
     return { success: false, error: error.message };
   }
 };
@@ -64,9 +84,31 @@ export const loginUser = async (email, password) => {
     await set(ref(database, `users/${userCredential.user.uid}/lastActive`), new Date().toISOString());
     await set(ref(database, `users/${userCredential.user.uid}/status`), 'online');
     
+    // Check if there's a saved redirect path
+    const savedRedirect = localStorage.getItem('redirectAfterLogin');
+    if (savedRedirect && savedRedirect.includes('chat.html')) {
+      window.location.href = savedRedirect;
+      localStorage.removeItem('redirectAfterLogin');
+    } else {
+      window.location.href = 'chat.html';
+    }
+    
     return { success: true, user: userCredential.user };
   } catch (error) {
     console.error('Login error:', error);
+    let errorMessage = 'Login failed. Please check your credentials and try again.';
+    
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      errorMessage = 'Invalid email or password. Please try again.';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'Invalid email format. Please enter a valid email address.';
+    } else if (error.code === 'auth/user-disabled') {
+      errorMessage = 'This account has been disabled. Please contact support.';
+    } else if (error.code === 'auth/too-many-requests') {
+      errorMessage = 'Too many unsuccessful login attempts. Please try again later.';
+    }
+    
+    showToast(errorMessage, 'error');
     return { success: false, error: error.message };
   }
 };
@@ -82,9 +124,19 @@ export const logoutUser = async () => {
     }
     
     await signOut(auth);
+    console.log('User logged out successfully');
+    showToast('You have been logged out successfully.', 'info');
+    
+    // Clear any saved redirects
+    localStorage.removeItem('redirectAfterLogin');
+    
+    // Redirect to home page
+    window.location.href = 'index.html';
+    
     return { success: true };
   } catch (error) {
     console.error('Logout error:', error);
+    showToast('Failed to log out. Please try again.', 'error');
     return { success: false, error: error.message };
   }
 };

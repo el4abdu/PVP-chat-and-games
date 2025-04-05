@@ -1092,130 +1092,170 @@ function addFeatureIconsEffect() {
     });
 }
 
-// Function to handle Get Started or Play Now button clicks
+/**
+ * Handle click for action buttons ("Get Started" and "Play Now")
+ * Redirects to chat if logged in, or shows auth modal if not
+ */
 function handleActionButtonClick() {
-    // Check if the user is logged in
-    const { auth } = firebase;
-    const user = auth.currentUser;
+    console.log('Action button clicked');
+    
+    // Check if user is logged in
+    const user = firebase.auth.currentUser;
     
     if (user) {
         // User is logged in, redirect to chat
+        console.log('User is logged in, redirecting to chat');
         window.location.href = 'chat.html';
     } else {
-        // User is not logged in, show the auth modal
-        const authModal = document.querySelector('.auth-modal-overlay');
-        if (authModal) {
-            authModal.classList.add('active');
+        // User is not logged in, show auth modal
+        console.log('User is not logged in, showing auth modal');
+        const authModalOverlay = document.querySelector('.auth-modal-overlay');
+        
+        if (authModalOverlay) {
+            authModalOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Switch to register tab if exists (to encourage new users to register)
+            const loginTab = document.querySelector('.auth-tab[data-tab="login"]');
+            const registerTab = document.querySelector('.auth-tab[data-tab="register"]');
+            const loginForm = document.querySelector('#login-form');
+            const registerForm = document.querySelector('#register-form');
+            
+            if (loginTab && registerTab && loginForm && registerForm) {
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
         } else {
-            console.error('Auth modal not found');
-            // Try to initialize auth system again
-            import('./auth.js').then(auth => {
-                auth.initAuth();
-                setTimeout(() => {
-                    const newAuthModal = document.querySelector('.auth-modal-overlay');
-                    if (newAuthModal) {
-                        newAuthModal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    }
-                }, 100);
-            });
+            // Create auth modal if it doesn't exist
+            createAuthModalFallback('register');
         }
+        
+        // Show a toast message
+        showToast('Please login or register to access the chat', 'info');
     }
 }
 
-// Check if user is logged in and update UI accordingly
+/**
+ * Check if user is logged in and update UI accordingly
+ */
 function checkUserLoggedIn() {
-    // Try to import Firebase auth
-    import('./firebase-auth.js').then(({ initAuthListener }) => {
-        initAuthListener(
-            // User logged in
-            (userData) => {
-                console.log('User is logged in:', userData);
-                updateUIForLoggedInUser(userData);
-            },
-            // User logged out
-            () => {
-                console.log('User is logged out');
-                updateUIForLoggedOutUser();
-            }
-        );
-    }).catch(error => {
-        console.error('Failed to import firebase-auth.js:', error);
+    console.log('Checking if user is logged in');
+    
+    // Listen for auth state changes
+    firebase.auth.onAuthStateChanged(user => {
+        if (user) {
+            console.log('User is logged in:', user);
+            
+            // Fetch user data from Firebase
+            const userRef = firebase.database.ref(`users/${user.uid}`);
+            userRef.once('value')
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        const userData = snapshot.val();
+                        console.log('User data retrieved:', userData);
+                        updateUIForLoggedInUser(userData);
+                    } else {
+                        console.log('No user data found in database');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user data:', error);
+                });
+        } else {
+            console.log('User is not logged in');
+            updateUIForLoggedOutUser();
+        }
     });
 }
 
-// Update UI for logged in user
+/**
+ * Update UI for logged in user
+ */
 function updateUIForLoggedInUser(userData) {
-    // Update header
+    console.log('Updating UI for logged in user');
+    
+    // Get auth buttons container
     const authButtons = document.querySelector('.auth-buttons');
-    if (authButtons) {
-        authButtons.innerHTML = `
-            <div class="user-profile-header">
-                <img src="${userData.avatar}" alt="${userData.username}" class="user-avatar-small">
-                <span class="user-name-small">${userData.username}</span>
+    if (!authButtons) return;
+    
+    // Hide login and signup buttons
+    const loginBtn = document.querySelector('.login-btn');
+    const signupBtn = document.querySelector('.signup-btn');
+    
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (signupBtn) signupBtn.style.display = 'none';
+    
+    // Create user profile header
+    const userProfileHTML = `
+        <div class="user-profile-header">
+            <div class="user-profile-info">
+                <img src="public/assets/images/avatars/${userData.avatar}" alt="${userData.username}" class="user-avatar">
+                <span class="user-name">${userData.username}</span>
             </div>
-            <button class="logout-btn-header">Logout</button>
-        `;
-        
-        // Add logout event listener
-        const logoutBtn = document.querySelector('.logout-btn-header');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', handleLogout);
-        }
+            <button class="logout-btn" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    `;
+    
+    authButtons.innerHTML = userProfileHTML;
+    
+    // Add logout event listener
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
     }
     
-    // Change Get Started button text
+    // Update call-to-action buttons
     const getStartedBtn = document.querySelector('.get-started-btn');
-    if (getStartedBtn) {
-        getStartedBtn.textContent = 'Go to Chat';
-    }
-    
-    // Change Play Now button text
     const playNowBtn = document.querySelector('.play-now-btn');
-    if (playNowBtn) {
-        playNowBtn.textContent = 'Open Chat';
-    }
+    
+    if (getStartedBtn) getStartedBtn.textContent = 'Open Chat';
+    if (playNowBtn) playNowBtn.textContent = 'Play Now';
 }
 
-// Update UI for logged out user
+/**
+ * Update UI for logged out user
+ */
 function updateUIForLoggedOutUser() {
-    // Reset auth buttons
+    console.log('Updating UI for logged out user');
+    
+    // Get auth buttons container
     const authButtons = document.querySelector('.auth-buttons');
-    if (authButtons) {
-        authButtons.innerHTML = `
-            <button class="login-btn">Login</button>
-            <button class="signup-btn">REGISTER</button>
-        `;
-        
-        // Re-add event listeners
-        const loginBtn = document.querySelector('.login-btn');
-        const signupBtn = document.querySelector('.signup-btn');
-        
-        if (loginBtn) {
-            loginBtn.addEventListener('click', () => {
-                openAuthModal('login');
-            });
-        }
-        
-        if (signupBtn) {
-            signupBtn.addEventListener('click', () => {
-                openAuthModal('register');
-            });
-        }
+    if (!authButtons) return;
+    
+    // Show default login and signup buttons
+    const defaultButtonsHTML = `
+        <button class="login-btn">Login</button>
+        <button class="signup-btn">REGISTER</button>
+    `;
+    
+    authButtons.innerHTML = defaultButtonsHTML;
+    
+    // Add event listeners to new buttons
+    const loginBtn = document.querySelector('.login-btn');
+    const signupBtn = document.querySelector('.signup-btn');
+    
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            openAuthModal('login');
+        });
     }
     
-    // Reset Get Started button text
+    if (signupBtn) {
+        signupBtn.addEventListener('click', function() {
+            openAuthModal('register');
+        });
+    }
+    
+    // Update call-to-action buttons
     const getStartedBtn = document.querySelector('.get-started-btn');
-    if (getStartedBtn) {
-        getStartedBtn.textContent = 'GET STARTED NOW';
-    }
-    
-    // Reset Play Now button text
     const playNowBtn = document.querySelector('.play-now-btn');
-    if (playNowBtn) {
-        playNowBtn.textContent = 'Play Now';
-    }
+    
+    if (getStartedBtn) getStartedBtn.textContent = 'Get Started';
+    if (playNowBtn) playNowBtn.textContent = 'Play Now';
 }
 
 // Handle logout

@@ -6,9 +6,10 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateProfile
 } from 'firebase/auth';
-import { ref, set, get } from 'firebase/database';
+import { ref, set, get, update } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // DOM Elements
@@ -300,117 +301,38 @@ function switchTab(tab) {
   }
 }
 
-// Handle login form submission
-async function handleLogin(e) {
-  e.preventDefault();
+// Handle Auth State Change
+function handleAuthStateChange(user) {
+  console.log('Auth state changed:', user ? 'User logged in' : 'User logged out');
   
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
-  
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    closeAuthModal();
-    showSuccessMessage('Login successful!');
-  } catch (error) {
-    showErrorMessage('Login failed: ' + getAuthErrorMessage(error));
-  }
-}
+  if (user) {
+    // Get user data from database
+    get(ref(database, `users/${user.uid}`))
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          console.log('User data retrieved:', userData);
+          
+          if (!userData.username) {
+            // If username doesn't exist, show profile completion
+            openProfileCompletionModal(user);
+          } else {
+            // Update UI with logged in state
+            updateAuthUI(true, userData);
 
-// Handle register form submission
-async function handleRegister(e) {
-  e.preventDefault();
-  
-  const email = document.getElementById('register-email').value;
-  const password = document.getElementById('register-password').value;
-  const username = document.getElementById('register-username').value;
-  const gender = document.querySelector('input[name="gender"]:checked').value;
-  const age = document.getElementById('register-age').value;
-  const avatarValue = document.querySelector('input[name="avatar"]:checked')?.value;
-  
-  if (!avatarValue) {
-    showErrorMessage('Please select an avatar');
-    return;
-  }
-  
-  try {
-    // Check if username is unique
-    const usernameSnapshot = await get(ref(database, 'usernames/' + username));
-    if (usernameSnapshot.exists()) {
-      showErrorMessage('Username already taken. Please choose another one.');
-      return;
-    }
-    
-    // Create user account
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    
-    // Save user profile
-    await set(ref(database, 'users/' + user.uid), {
-      username: username,
-      gender: gender,
-      age: age,
-      avatar: avatarValue,
-      createdAt: new Date().toISOString()
-    });
-    
-    // Save username to check uniqueness later
-    await set(ref(database, 'usernames/' + username), user.uid);
-    
-    closeAuthModal();
-    showSuccessMessage('Registration successful!');
-    showComingSoonPage(username, avatarValue);
-  } catch (error) {
-    showErrorMessage('Registration failed: ' + getAuthErrorMessage(error));
-  }
-}
-
-// Sign in with Google
-async function signInWithGoogle() {
-  try {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    
-    // Check if user exists in our database
-    const userSnapshot = await get(ref(database, 'users/' + user.uid));
-    
-    if (!userSnapshot.exists()) {
-      // New user, open the profile completion modal
-      openProfileCompletionModal(user);
-    } else {
-      // Existing user
-      closeAuthModal();
-      showSuccessMessage('Login successful!');
-      const userData = userSnapshot.val();
-      showComingSoonPage(userData.username, userData.avatar);
-    }
-  } catch (error) {
-    showErrorMessage('Google sign-in failed: ' + getAuthErrorMessage(error));
-  }
-}
-
-// Sign in with Facebook
-async function signInWithFacebook() {
-  try {
-    const provider = new FacebookAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    
-    // Check if user exists in our database
-    const userSnapshot = await get(ref(database, 'users/' + user.uid));
-    
-    if (!userSnapshot.exists()) {
-      // New user, open the profile completion modal
-      openProfileCompletionModal(user);
-    } else {
-      // Existing user
-      closeAuthModal();
-      showSuccessMessage('Login successful!');
-      const userData = userSnapshot.val();
-      showComingSoonPage(userData.username, userData.avatar);
-    }
-  } catch (error) {
-    showErrorMessage('Facebook sign-in failed: ' + getAuthErrorMessage(error));
+            // Redirect to chat if on index page
+            if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+              window.location.href = 'chat.html';
+            }
+          }
+        }
+      })
+      .catch((error) => {
+        console.error('Error getting user data:', error);
+      });
+  } else {
+    // Update UI with logged out state
+    updateAuthUI(false);
   }
 }
 
@@ -543,73 +465,226 @@ function openProfileCompletionModal(user) {
   });
 }
 
-// Handle auth state changes
-function handleAuthStateChange(user) {
-  const authButtons = document.querySelector('.auth-buttons');
+// Handle Login
+async function handleLogin(e) {
+  e.preventDefault();
+  console.log('Login form submitted');
   
-  if (user) {
-    // User is signed in
-    get(ref(database, 'users/' + user.uid)).then((snapshot) => {
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        
-        // Update UI for signed in user
-        if (authButtons) {
-          authButtons.innerHTML = `
-            <div class="user-profile-button">
-              <img src="public/assets/images/avatars/${userData.avatar}" alt="${userData.username}" class="user-avatar">
-              <span>${userData.username}</span>
-              <button class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
-            </div>
-          `;
-          
-          // Add logout handler
-          document.querySelector('.logout-btn').addEventListener('click', () => {
-            signOut(auth).then(() => {
-              showSuccessMessage('Logged out successfully');
-              window.location.reload();
-            });
-          });
-        }
-      }
-    });
-  } else {
-    // User is signed out
-    if (authButtons) {
-      authButtons.innerHTML = `
-        <button class="login-btn">Login</button>
-        <button class="signup-btn">REGISTER</button>
-      `;
-      
-      // Re-add event listeners
-      document.querySelector('.login-btn').addEventListener('click', () => openAuthModal('login'));
-      document.querySelector('.signup-btn').addEventListener('click', () => openAuthModal('register'));
-    }
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  
+  try {
+    // Sign in with Firebase Auth
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    console.log('User signed in:', user);
+    
+    // Show success message
+    showSuccessMessage('Login successful!');
+    
+    // Close the modal
+    closeAuthModal();
+    
+    // Redirect to chat
+    setTimeout(() => {
+      window.location.href = 'chat.html';
+    }, 1000);
+  } catch (error) {
+    console.error('Login error:', error);
+    showErrorMessage(getAuthErrorMessage(error));
   }
 }
 
-// Show Coming Soon page after successful login/register
-function showComingSoonPage(username, avatar) {
-  // Create coming soon page
-  const comingSoonHTML = `
-    <div class="coming-soon-container">
-      <h1 class="user-welcome">Welcome, ${username}!</h1>
-      <img src="public/assets/images/avatars/${avatar}" alt="${username}" class="coming-soon-image">
-      <p class="coming-soon-message">The website is still in development. We are working hard to bring you the best chat & play experience. Stay tuned for exciting updates!</p>
-      <button class="auth-submit-btn logout-btn">Logout</button>
-    </div>
-  `;
+// Handle Register
+async function handleRegister(e) {
+  e.preventDefault();
+  console.log('Register form submitted');
   
-  // Replace page content
-  document.querySelector('main') ? document.querySelector('main').innerHTML = comingSoonHTML : document.body.innerHTML = comingSoonHTML;
+  // Get registration fields
+  const email = document.getElementById('register-email').value;
+  const password = document.getElementById('register-password').value;
+  const username = document.getElementById('register-username').value;
+  const genderInput = document.querySelector('input[name="gender"]:checked');
+  const gender = genderInput ? genderInput.value : '';
+  const age = document.getElementById('register-age').value;
+  const avatarInput = document.querySelector('input[name="avatar"]:checked');
+  const avatar = avatarInput ? avatarInput.value : '';
   
-  // Add logout handler
-  document.querySelector('.logout-btn').addEventListener('click', () => {
-    signOut(auth).then(() => {
-      showSuccessMessage('Logged out successfully');
-      window.location.reload();
+  // Validate inputs
+  if (!email || !password || !username || !gender || !age || !avatar) {
+    showErrorMessage('Please fill in all fields');
+    return;
+  }
+  
+  try {
+    // Check if username is already taken
+    const usernameRef = ref(database, `usernames/${username}`);
+    const usernameSnapshot = await get(usernameRef);
+    
+    if (usernameSnapshot.exists()) {
+      showErrorMessage('Username is already taken');
+      return;
+    }
+    
+    // Create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Update user profile
+    await updateProfile(user, {
+      displayName: username,
+      photoURL: avatar
     });
-  });
+    
+    // Store additional user data in database
+    await set(ref(database, `users/${user.uid}`), {
+      username,
+      email,
+      gender,
+      age,
+      avatar,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      settings: {
+        theme: 'light',
+        notifications: true
+      }
+    });
+    
+    // Register username in usernames collection
+    await set(ref(database, `usernames/${username}`), user.uid);
+    
+    // Create default chat rooms
+    await createDefaultChatRooms(user.uid);
+    
+    // Show success message
+    showSuccessMessage('Registration successful!');
+    
+    // Close the modal
+    closeAuthModal();
+    
+    // Redirect to chat
+    setTimeout(() => {
+      window.location.href = 'chat.html';
+    }, 1000);
+  } catch (error) {
+    console.error('Registration error:', error);
+    showErrorMessage(getAuthErrorMessage(error));
+  }
+}
+
+// Create default chat rooms for new users
+async function createDefaultChatRooms(userId) {
+  try {
+    // Get default rooms
+    const defaultRoomsRef = ref(database, 'defaultRooms');
+    const snapshot = await get(defaultRoomsRef);
+    
+    if (!snapshot.exists()) {
+      // Create global chat room if it doesn't exist
+      const globalRoomRef = ref(database, 'chatRooms/global');
+      const globalRoomSnapshot = await get(globalRoomRef);
+      
+      if (!globalRoomSnapshot.exists()) {
+        await set(globalRoomRef, {
+          id: 'global',
+          name: 'Global Chat',
+          description: 'Chat with players from around the world',
+          createdAt: new Date().toISOString(),
+          isPublic: true,
+          isDefault: true,
+          members: [userId]
+        });
+      } else {
+        // Add user to global chat members
+        const members = globalRoomSnapshot.val().members || [];
+        if (!members.includes(userId)) {
+          members.push(userId);
+          await update(globalRoomRef, { members });
+        }
+      }
+      
+      // Add global chat to user's rooms
+      await set(ref(database, `users/${userId}/rooms/global`), {
+        joinedAt: new Date().toISOString()
+      });
+    } else {
+      // Add user to all default rooms
+      const defaultRooms = snapshot.val();
+      
+      for (const roomId in defaultRooms) {
+        const roomRef = ref(database, `chatRooms/${roomId}`);
+        const roomSnapshot = await get(roomRef);
+        
+        if (roomSnapshot.exists()) {
+          // Add user to room members
+          const roomData = roomSnapshot.val();
+          const members = roomData.members || [];
+          
+          if (!members.includes(userId)) {
+            members.push(userId);
+            await update(roomRef, { members });
+          }
+          
+          // Add room to user's rooms
+          await set(ref(database, `users/${userId}/rooms/${roomId}`), {
+            joinedAt: new Date().toISOString()
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error creating default chat rooms:', error);
+  }
+}
+
+// Sign in with Google
+async function signInWithGoogle() {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    
+    // Check if user exists in our database
+    const userSnapshot = await get(ref(database, 'users/' + user.uid));
+    
+    if (!userSnapshot.exists()) {
+      // New user, open the profile completion modal
+      openProfileCompletionModal(user);
+    } else {
+      // Existing user
+      closeAuthModal();
+      showSuccessMessage('Login successful!');
+      const userData = userSnapshot.val();
+      showComingSoonPage(userData.username, userData.avatar);
+    }
+  } catch (error) {
+    showErrorMessage('Google sign-in failed: ' + getAuthErrorMessage(error));
+  }
+}
+
+// Sign in with Facebook
+async function signInWithFacebook() {
+  try {
+    const provider = new FacebookAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    
+    // Check if user exists in our database
+    const userSnapshot = await get(ref(database, 'users/' + user.uid));
+    
+    if (!userSnapshot.exists()) {
+      // New user, open the profile completion modal
+      openProfileCompletionModal(user);
+    } else {
+      // Existing user
+      closeAuthModal();
+      showSuccessMessage('Login successful!');
+      const userData = userSnapshot.val();
+      showComingSoonPage(userData.username, userData.avatar);
+    }
+  } catch (error) {
+    showErrorMessage('Facebook sign-in failed: ' + getAuthErrorMessage(error));
+  }
 }
 
 // Helper to show error messages

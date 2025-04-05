@@ -28,11 +28,30 @@ let unsubscribeMessages = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Chat page loaded');
     
+    // Hide loading overlay
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        setTimeout(() => {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 300);
+        }, 800);
+    }
+    
     // Check authentication state
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             // User is signed in
             console.log('User is signed in:', user.uid);
+            
+            // Update user status to online
+            try {
+                await set(ref(database, `users/${user.uid}/status`), 'online');
+                await set(ref(database, `users/${user.uid}/lastActive`), new Date().toISOString());
+            } catch (error) {
+                console.error('Error updating user status:', error);
+            }
             
             // Get user data from database
             try {
@@ -51,6 +70,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Enable chat functionality
                     enableChat();
+                    
+                    // Add random chat button
+                    addRandomChatButton();
                 } else {
                     console.error('User data not found in database');
                     showToast('User data not found. Please try logging in again.', 'error');
@@ -88,6 +110,19 @@ function updateUserProfile(user) {
 
 // Load chat rooms from Firebase
 function loadChatRooms() {
+    // Show loading state
+    if (chatList) {
+        chatList.innerHTML = `
+            <li class="chat-list-item loading">
+                <div class="chat-item-avatar"></div>
+                <div class="chat-item-info">
+                    <div class="chat-item-name"></div>
+                    <div class="chat-item-message"></div>
+                </div>
+            </li>
+        `;
+    }
+    
     // Clean up previous listener if exists
     if (unsubscribeRooms) unsubscribeRooms();
     
@@ -97,8 +132,8 @@ function loadChatRooms() {
     // Listen for changes
     unsubscribeRooms = onValue(userRoomsRef, async (snapshot) => {
         if (!snapshot.exists()) {
-            // No rooms, create a default room
-            createDefaultRoom();
+            // No rooms, create default rooms
+            await createDefaultRooms();
             return;
         }
         
@@ -111,9 +146,38 @@ function loadChatRooms() {
             try {
                 const roomSnapshot = await get(ref(database, `chatRooms/${roomId}`));
                 if (roomSnapshot.exists()) {
+                    // Get room data
+                    const roomData = roomSnapshot.val();
+                    
+                    // Get last message for the room
+                    const messagesQuery = query(
+                        ref(database, `messages/${roomId}`),
+                        orderByChild('timestamp')
+                    );
+                    
+                    const messagesSnapshot = await get(messagesQuery);
+                    let lastMessage = null;
+                    
+                    if (messagesSnapshot.exists()) {
+                        // Convert to array and get the last message
+                        const messagesArray = [];
+                        messagesSnapshot.forEach(messageSnapshot => {
+                            messagesArray.push({
+                                id: messageSnapshot.key,
+                                ...messageSnapshot.val()
+                            });
+                        });
+                        
+                        if (messagesArray.length > 0) {
+                            lastMessage = messagesArray[messagesArray.length - 1];
+                        }
+                    }
+                    
+                    // Add room with last message to the list
                     rooms.push({
                         id: roomId,
-                        ...roomSnapshot.val()
+                        ...roomData,
+                        lastMessage
                     });
                 }
             } catch (error) {
@@ -122,7 +186,11 @@ function loadChatRooms() {
         }
         
         // Sort rooms by last activity
-        rooms.sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+        rooms.sort((a, b) => {
+            const aTime = a.lastMessage ? new Date(a.lastMessage.timestamp) : new Date(a.lastActivity);
+            const bTime = b.lastMessage ? new Date(b.lastMessage.timestamp) : new Date(b.lastActivity);
+            return bTime - aTime;
+        });
         
         // Update UI
         updateRoomsList(rooms);
@@ -134,46 +202,89 @@ function loadChatRooms() {
     });
 }
 
-// Create a default public room if user has no rooms
-async function createDefaultRoom() {
+// Create default rooms for new users
+async function createDefaultRooms() {
     try {
-        // Create "General" room
-        const newRoomRef = push(ref(database, 'chatRooms'));
-        const roomId = newRoomRef.key;
+        // Create "Global" room if it doesn't exist
+        const globalRoomRef = ref(database, 'chatRooms/global');
+        const globalRoomSnapshot = await get(globalRoomRef);
         
-        const roomData = {
-            id: roomId,
-            name: 'General',
-            isPrivate: false,
-            createdBy: currentUser.uid,
-            createdAt: new Date().toISOString(),
-            lastActivity: new Date().toISOString(),
-            members: [currentUser.uid]
-        };
+        if (!globalRoomSnapshot.exists()) {
+            // Create global room
+            await set(globalRoomRef, {
+                id: 'global',
+                name: 'Global Chat',
+                description: 'Chat with players from around the world',
+                createdAt: new Date().toISOString(),
+                lastActivity: new Date().toISOString(),
+                isPrivate: false,
+                members: [currentUser.uid]
+            });
+        } else {
+            // Add user to global room if not already a member
+            const globalRoom = globalRoomSnapshot.val();
+            const members = globalRoom.members || [];
+            
+            if (!members.includes(currentUser.uid)) {
+                members.push(currentUser.uid);
+                await set(ref(database, `chatRooms/global/members`), members);
+            }
+        }
         
-        await set(newRoomRef, roomData);
-        
-        // Add room to user's rooms
-        await set(ref(database, `users/${currentUser.uid}/rooms/${roomId}`), {
+        // Add global room to user's rooms
+        await set(ref(database, `users/${currentUser.uid}/rooms/global`), {
             joined: new Date().toISOString()
         });
         
-        // Create a welcome message
-        const welcomeMessage = {
-            text: `Welcome to the General chat room, ${currentUser.username}! This is where all users can chat together.`,
+        // Create welcome message if it doesn't exist
+        const welcomeMessageRef = ref(database, `messages/global/welcome`);
+        const welcomeMessageSnapshot = await get(welcomeMessageRef);
+        
+        if (!welcomeMessageSnapshot.exists()) {
+            await set(welcomeMessageRef, {
+                text: 'Welcome to the Global Chat! This is where all users can chat together. Feel free to introduce yourself!',
+                senderId: 'system',
+                senderName: 'System',
+                timestamp: new Date().toISOString(),
+                isSystem: true
+            });
+        }
+        
+        // Create "Games Discussion" room
+        const gamesRoomRef = push(ref(database, 'chatRooms'));
+        const gamesRoomId = gamesRoomRef.key;
+        
+        await set(gamesRoomRef, {
+            id: gamesRoomId,
+            name: 'Games Discussion',
+            description: 'Discuss your favorite games and strategies',
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
+            isPrivate: false,
+            members: [currentUser.uid]
+        });
+        
+        // Add games room to user's rooms
+        await set(ref(database, `users/${currentUser.uid}/rooms/${gamesRoomId}`), {
+            joined: new Date().toISOString()
+        });
+        
+        // Add welcome message to games room
+        const gamesWelcomeRef = push(ref(database, `messages/${gamesRoomId}`));
+        await set(gamesWelcomeRef, {
+            text: 'Welcome to the Games Discussion room! Share your favorite games, tips, and strategies with other players.',
             senderId: 'system',
             senderName: 'System',
             timestamp: new Date().toISOString(),
             isSystem: true
-        };
+        });
         
-        const newMessageRef = push(ref(database, `messages/${roomId}`));
-        await set(newMessageRef, welcomeMessage);
+        console.log('Default rooms created');
+        showToast('Welcome to PVP Chat! Default chat rooms have been created for you.', 'success');
         
-        console.log('Default room created');
     } catch (error) {
-        console.error('Error creating default room:', error);
-        showToast('Failed to create default chat room', 'error');
+        console.error('Error creating default rooms:', error);
+        showToast('Failed to create default chat rooms', 'error');
     }
 }
 
@@ -741,6 +852,10 @@ function enableChat() {
 
 // Redirect to login page
 function redirectToLogin() {
+    // Save current URL to redirect back after login
+    localStorage.setItem('redirectAfterLogin', window.location.href);
+    
+    // Redirect to login page
     window.location.href = 'index.html';
 }
 
@@ -828,4 +943,167 @@ function showToast(message, type = 'info') {
             toast.remove();
         }, 300);
     }, 3000);
+}
+
+// Add a button to find random strangers to chat with
+function addRandomChatButton() {
+    const navHeader = document.querySelector('.nav-header');
+    if (!navHeader) return;
+    
+    // Create button if it doesn't exist
+    if (!document.querySelector('.find-stranger-btn')) {
+        const randomChatBtn = document.createElement('button');
+        randomChatBtn.className = 'find-stranger-btn';
+        randomChatBtn.innerHTML = '<i class="fas fa-random"></i>';
+        randomChatBtn.title = 'Find stranger to chat with';
+        navHeader.appendChild(randomChatBtn);
+        
+        // Add event listener
+        randomChatBtn.addEventListener('click', findStrangerToChat);
+        
+        // Add some CSS for the button
+        const style = document.createElement('style');
+        style.textContent = `
+            .find-stranger-btn {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                background: var(--gradient-tertiary);
+                color: white;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: var(--transition-bounce);
+                font-size: 14px;
+                margin-left: 8px;
+                box-shadow: var(--shadow-md);
+            }
+            
+            .find-stranger-btn:hover {
+                transform: scale(1.1) rotate(15deg);
+                box-shadow: var(--box-shadow-hover);
+            }
+            
+            .stranger-message {
+                text-align: center;
+                padding: 10px 15px;
+                background-color: rgba(124, 58, 237, 0.1);
+                border-radius: var(--border-radius-md);
+                margin: 10px 0;
+                color: var(--primary-color);
+                font-weight: 500;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Find a stranger to chat with
+async function findStrangerToChat() {
+    try {
+        // Show loading
+        showToast('Finding someone to chat with...', 'info');
+        
+        // Get all users
+        const usersSnapshot = await get(ref(database, 'users'));
+        if (!usersSnapshot.exists()) {
+            showToast('No users found to chat with', 'error');
+            return;
+        }
+        
+        const users = [];
+        usersSnapshot.forEach(childSnapshot => {
+            const user = childSnapshot.val();
+            user.uid = childSnapshot.key;
+            
+            // Don't include current user
+            if (user.uid !== currentUser.uid) {
+                users.push(user);
+            }
+        });
+        
+        // If no other users found
+        if (users.length === 0) {
+            showToast('No other users found to chat with', 'error');
+            return;
+        }
+        
+        // Select a random user
+        const randomUser = users[Math.floor(Math.random() * users.length)];
+        
+        // Check if private room already exists between these users
+        let existingRoom = null;
+        for (const room of rooms) {
+            if (room.isPrivate && room.members && room.members.length === 2) {
+                if (room.members.includes(currentUser.uid) && room.members.includes(randomUser.uid)) {
+                    existingRoom = room;
+                    break;
+                }
+            }
+        }
+        
+        // If room exists, select it
+        if (existingRoom) {
+            selectRoom(existingRoom);
+            showToast(`Reconnected with ${randomUser.username}!`, 'success');
+            return;
+        }
+        
+        // Create a new private room
+        const newRoomRef = push(ref(database, 'chatRooms'));
+        const roomId = newRoomRef.key;
+        
+        const roomName = `Chat with ${randomUser.username}`;
+        const roomData = {
+            id: roomId,
+            name: roomName,
+            isPrivate: true,
+            createdBy: currentUser.uid,
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
+            members: [currentUser.uid, randomUser.uid],
+            type: 'stranger'
+        };
+        
+        await set(newRoomRef, roomData);
+        
+        // Add room to both users' rooms
+        await set(ref(database, `users/${currentUser.uid}/rooms/${roomId}`), {
+            joined: new Date().toISOString()
+        });
+        
+        await set(ref(database, `users/${randomUser.uid}/rooms/${roomId}`), {
+            joined: new Date().toISOString()
+        });
+        
+        // Add a system message
+        const systemMessage = {
+            text: `You've been connected with ${randomUser.username}. Say hello!`,
+            senderId: 'system',
+            senderName: 'System',
+            timestamp: new Date().toISOString(),
+            isSystem: true
+        };
+        
+        const newMessageRef = push(ref(database, `messages/${roomId}`));
+        await set(newMessageRef, systemMessage);
+        
+        // Refresh the rooms list
+        loadChatRooms();
+        
+        // Select the new room after a small delay
+        setTimeout(() => {
+            const newRoom = rooms.find(r => r.id === roomId);
+            if (newRoom) {
+                selectRoom(newRoom);
+                showToast(`Connected with ${randomUser.username}!`, 'success');
+            }
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error finding stranger:', error);
+        showToast('Failed to find someone to chat with. Try again later.', 'error');
+    }
 } 
