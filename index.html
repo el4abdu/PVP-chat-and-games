@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP Chat - Play and Chat with Friends</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="stylesheet" href="public/css/auth-modal.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="public/assets/images/favicon.png" type="image/png">
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="public/assets/images/logo.png" alt="PVP Chat Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#about" class="active">About us</a></li>
+                    <li><a href="#learning">Games</a></li>
+                    <li><a href="#leaderboard">Leaderboard</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button class="login-btn">Login</button>
+                <button class="signup-btn">REGISTER</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="about">
+        <div class="container">
+            <div class="hero-image">
+                <img src="public/assets/images/hero-image.png" alt="Play and Chat">
+            </div>
+            <div class="hero-content">
+                <h2>Chat & Play <br>Simultaneously</h2>
+                <p>Experience the ultimate gaming platform where you can chat with friends while competing in exciting games. No need to switch between apps - enjoy both in one seamless experience!</p>
+                <div class="hero-buttons">
+                    <button class="get-started-btn">GET STARTED NOW</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <div class="features-container">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="public/assets/images/chat-icon.png" alt="Chat Icon">
+                    </div>
+                    <h3>Real-time Chat</h3>
+                    <p>Connect with players worldwide through text, voice, or video chat without interrupting your gameplay.</p>
+                    <a href="#" class="learn-more">Learn more <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="public/assets/images/games-icon.png" alt="Games Icon">
+                    </div>
+                    <h3>Competitive Games</h3>
+                    <p>Choose from dozens of popular multiplayer games with integrated chat features for an enhanced experience.</p>
+                    <a href="#" class="learn-more">Learn more <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <img src="public/assets/images/security-icon.png" alt="Security Icon">
+                    </div>
+                    <h3>Dual Experience</h3>
+                    <p>Our innovative interface lets you play and chat in one screen with no lag or performance issues.</p>
+                    <a href="#" class="learn-more">Learn more <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section class="leaderboard" id="leaderboard">
+        <div class="container">
+            <h2>Global Rankings</h2>
+            <div class="leaderboard-tabs">
+                <button class="tab-btn active" data-region="global">Global</button>
+                <button class="tab-btn" data-region="europe">Europe</button>
+                <button class="tab-btn" data-region="america">America</button>
+                <button class="tab-btn" data-region="asia">Asia</button>
+            </div>
+            <div class="leaderboard-table">
+                <div class="table-header">
+                    <div class="rank">Rank</div>
+                    <div class="player">Player</div>
+                    <div class="score">Score</div>
+                    <div class="change">Change</div>
+                    <div class="type">Game Type</div>
+                    <div class="games">Games</div>
+                </div>
+                <div class="table-rows">
+                    <!-- Table rows will be added by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Section -->
+    <section class="learning-game" id="learning">
+        <div class="learning-game-image">
+            <img src="public/assets/images/game-1.png" alt="Featured Game">
+        </div>
+        <div class="learning-game-content">
+            <h2>Play & Chat Together</h2>
+            <p>Our unique platform allows you to enjoy competitive gaming while chatting with friends in real-time. Challenge opponents, build strategies through chat, and create lasting connections all in one place.</p>
+            <button class="play-now-btn">Play Now</button>
+            <div class="learning-game-info">
+                <div class="info-item">
+                    <h4>Experience</h4>
+                    <p>Dual Interface</p>
+                    <small>Chat + Gaming</small>
+                </div>
+                <div class="info-item">
+                    <h4>Players</h4>
+                    <p>Multiplayer</p>
+                    <small>Global Community</small>
+                </div>
+                <div class="info-item">
+                    <h4>Rating</h4>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                        <span>4.8/5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Question Section -->
+    <section class="question-section" id="contact">
+        <div class="container">
+            <div class="question-content">
+                <h2>Ready to Play & Chat?</h2>
+                <p>Join thousands of players who are already enjoying the best dual gaming and chat experience. Our team is here to help with any questions!</p>
+                <button class="contact-btn">Get in Touch</button>
+            </div>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <h4>Email Us</h4>
+                        <p>support@pvpchat.com</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <div>
+                        <h4>Call Us</h4>
+                        <p>+1 (555) 123-4567</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-comments"></i>
+                    <div>
+                        <h4>Live Chat</h4>
+                        <p>Available 24/7</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-logo">
+                    <img src="public/assets/images/logo.png" alt="PVP Chat Logo" class="footer-logo-img">
+                </div>
+                <ul class="footer-nav">
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#learning">Games</a></li>
+                    <li><a href="#leaderboard">Leaderboard</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
+                    <a href="#" aria-label="Twitch"><i class="fab fa-twitch"></i></a>
+                </div>
+            </div>
+            
+            <div class="newspaper">
+                <div class="newspaper-content">
+                    <h3>Stay Connected</h3>
+                    <p>Subscribe to our newsletter for the latest updates on new features and games.</p>
+                </div>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Your email address" aria-label="Email address for newsletter">
+                    <button type="submit">SUBSCRIBE</button>
+                </form>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2025 PVP Chat. All rights reserved.</p>
+                <div class="app-buttons">
+                    <a href="#" class="app-button">
+                        <i class="fab fa-google-play"></i> Google Play
+                    </a>
+                    <a href="#" class="app-button">
+                        <i class="fab fa-apple"></i> App Store
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Create avatar storage for the images -->
+    <div id="avatar-storage" style="display: none;">
+        <img src="public/assets/images/avatars/avatar  1.png" alt="Avatar 1">
+        <img src="public/assets/images/avatars/avatar  2.png" alt="Avatar 2">
+        <img src="public/assets/images/avatars/avatar  3.png" alt="Avatar 3">
+        <img src="public/assets/images/avatars/avatar  4.png" alt="Avatar 4">
+        <img src="public/assets/images/avatars/avatar  5.png" alt="Avatar 5">
+        <img src="public/assets/images/avatars/avatar  6.png" alt="Avatar 6">
+        <img src="public/assets/images/avatars/avatar  7.png" alt="Avatar 7">
+        <img src="public/assets/images/avatars/avatar  8.png" alt="Avatar 8">
+        <img src="public/assets/images/avatars/avatar  9.png" alt="Avatar 9">
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules directly from CDN
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+        import { getDatabase } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+        import { getStorage } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js';
+    </script>
+    
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script type="module">
+        import { auth, database, storage } from './public/js/firebase-config.js';
+        import { initAuth } from './public/js/auth.js';
+        
+        // Wait for DOM to be fully loaded
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded');
+            
+            // Initialize auth system
+            setTimeout(() => {
+                console.log('Initializing auth system');
+                initAuth();
+                
+                // Backup direct event listeners for buttons
+                const loginBtn = document.querySelector('.login-btn');
+                const signupBtn = document.querySelector('.signup-btn');
+                
+                if (loginBtn) {
+                    console.log('Adding direct click handler to login button');
+                    loginBtn.addEventListener('click', function() {
+                        console.log('Login button clicked directly');
+                        // Try to find modal and show it
+                        let modal = document.querySelector('.auth-modal-overlay');
+                        if (modal) {
+                            modal.classList.add('active');
+                            document.body.style.overflow = 'hidden';
+                            // Switch to login tab
+                            document.querySelector('.auth-tab[data-tab="login"]').classList.add('active');
+                            document.querySelector('.auth-tab[data-tab="register"]').classList.remove('active');
+                            document.getElementById('login-form').style.display = 'block';
+                            document.getElementById('register-form').style.display = 'none';
+                        } else {
+                            console.error('Modal not found, trying to create it');
+                            // Try to create modal by calling initAuth again
+                            initAuth();
+                        }
+                    });
+                }
+                
+                if (signupBtn) {
+                    console.log('Adding direct click handler to signup button');
+                    signupBtn.addEventListener('click', function() {
+                        console.log('Signup button clicked directly');
+                        // Try to find modal and show it
+                        let modal = document.querySelector('.auth-modal-overlay');
+                        if (modal) {
+                            modal.classList.add('active');
+                            document.body.style.overflow = 'hidden';
+                            // Switch to register tab
+                            document.querySelector('.auth-tab[data-tab="login"]').classList.remove('active');
+                            document.querySelector('.auth-tab[data-tab="register"]').classList.add('active');
+                            document.getElementById('login-form').style.display = 'none';
+                            document.getElementById('register-form').style.display = 'block';
+                        } else {
+                            console.error('Modal not found, trying to create it');
+                            // Try to create modal by calling initAuth again
+                            initAuth();
+                        }
+                    });
+                }
+            }, 500); // small delay to ensure everything is loaded
+        });
+    </script>
+    
+    <script src="public/js/script.js"></script>
+</body>
+</html> 

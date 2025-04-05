@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP Chat - Chat Room</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="stylesheet" href="public/css/chat.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="public/assets/images/favicon.png" type="image/png">
+</head>
+<body>
+    <div class="chat-app">
+        <!-- Sidebar -->
+        <div class="chat-sidebar">
+            <!-- User Profile -->
+            <div class="user-profile">
+                <div class="user-avatar-container">
+                    <img src="public/assets/images/avatars/avatar 1.png" alt="User Avatar" class="user-avatar" id="user-avatar">
+                    <span class="user-status online"></span>
+                </div>
+                <div class="user-info">
+                    <h3 class="user-name" id="user-name">Loading...</h3>
+                    <p class="user-status-text">Online</p>
+                </div>
+            </div>
+            
+            <!-- Chat Rooms Navigation -->
+            <div class="chat-nav">
+                <div class="nav-header">
+                    <h3>Chat Rooms</h3>
+                    <button class="new-chat-btn" id="new-chat-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                
+                <!-- Search Box -->
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search chats..." id="search-chats">
+                </div>
+                
+                <!-- Chat List -->
+                <ul class="chat-list" id="chat-list">
+                    <li class="chat-list-item loading">
+                        <div class="chat-item-avatar"></div>
+                        <div class="chat-item-info">
+                            <div class="chat-item-name"></div>
+                            <div class="chat-item-message"></div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Settings & Logout -->
+            <div class="sidebar-footer">
+                <button class="settings-btn" id="settings-btn">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </button>
+                <button class="logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Chat Area -->
+        <div class="chat-main">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-room-info">
+                    <h2 class="chat-room-name" id="current-room-name">Select a room</h2>
+                    <p class="chat-room-participants" id="current-room-participants">
+                        <i class="fas fa-user"></i> 0 participants
+                    </p>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="game-btn" id="start-game-btn">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Play Game</span>
+                    </button>
+                    <button class="room-info-btn" id="room-info-btn">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-start-message">
+                    <img src="public/assets/images/chat-start.svg" alt="Start Chatting" class="chat-start-image">
+                    <h3>Select a chat room or create a new one</h3>
+                    <p>Start chatting with friends and playing games together!</p>
+                </div>
+            </div>
+            
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <button class="attach-btn" id="attach-btn">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <div class="chat-input-wrapper">
+                    <textarea class="chat-input" id="message-input" placeholder="Type a message..." disabled></textarea>
+                    <div class="input-actions">
+                        <button class="emoji-btn" id="emoji-btn">
+                            <i class="far fa-smile"></i>
+                        </button>
+                    </div>
+                </div>
+                <button class="send-btn" id="send-message-btn" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            
+            <!-- Game Overlay (Hidden by default) -->
+            <div class="game-overlay" id="game-overlay">
+                <div class="game-container">
+                    <div class="game-header">
+                        <h3>Playing: <span id="game-title">Tic Tac Toe</span></h3>
+                        <button class="close-game-btn" id="close-game-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="game-content" id="game-content">
+                        <!-- Game content will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Sidebar for Room Info (Hidden by default) -->
+        <div class="room-sidebar" id="room-sidebar">
+            <div class="room-sidebar-header">
+                <h3>Room Information</h3>
+                <button class="close-sidebar-btn" id="close-sidebar-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="room-sidebar-content">
+                <div class="room-details">
+                    <h4>About this room</h4>
+                    <p class="room-description" id="room-description">
+                        No room selected.
+                    </p>
+                    <p class="room-created-at" id="room-created-at">
+                        Created: -
+                    </p>
+                </div>
+                
+                <div class="room-participants">
+                    <h4>Participants</h4>
+                    <ul class="participants-list" id="participants-list">
+                        <!-- Participants will be loaded here -->
+                    </ul>
+                </div>
+                
+                <div class="room-actions">
+                    <button class="leave-room-btn" id="leave-room-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Leave Room
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal" id="new-room-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Chat Room</h3>
+                <button class="modal-close-btn" data-modal="new-room-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="new-room-form">
+                    <div class="form-group">
+                        <label for="room-name">Room Name</label>
+                        <input type="text" id="room-name" required placeholder="Enter room name">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-container">Private Room
+                            <input type="checkbox" id="room-private">
+                            <span class="checkmark"></span>
+                        </label>
+                        <p class="form-help">Private rooms are only visible to invited members.</p>
+                    </div>
+                    <div class="form-group" id="invite-members-group" style="display: none;">
+                        <label for="invite-members">Invite Members</label>
+                        <input type="text" id="invite-members" placeholder="Search for users to invite">
+                        <div class="selected-members" id="selected-members"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" data-modal="new-room-modal">Cancel</button>
+                        <button type="submit" class="create-btn">Create Room</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loader"></div>
+        <p>Loading your chat rooms...</p>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules directly from CDN
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+        import { getDatabase } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+        import { getStorage } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbDDimyxwhKaXon4IQwZTpgP2Twb8bHMo",
+            authDomain: "pvp-chat-fe5ab.firebaseapp.com",
+            databaseURL: "https://pvp-chat-fe5ab-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "pvp-chat-fe5ab",
+            storageBucket: "pvp-chat-fe5ab.appspot.com",
+            messagingSenderId: "387500645051",
+            appId: "1:387500645051:web:4a4428e53c637ec2e9a79e",
+            measurementId: "G-90LCQ3SF9X"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
+        const analytics = getAnalytics(app);
+
+        // Make Firebase accessible globally
+        window.firebase = { app, auth, database, storage, analytics };
+    </script>
+    
+    <!-- Custom scripts -->
+    <script type="module" src="public/js/chat.js"></script>
+</body>
+</html> 

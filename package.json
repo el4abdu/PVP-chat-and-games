@@ -1,0 +1,18 @@
+{
+  "name": "pvp-chat",
+  "version": "1.0.0",
+  "description": "A modern web platform where users can chat with strangers and play mini-games together. The website features a responsive design, animated elements, and interactive components built with HTML, CSS, and JavaScript.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx serve",
+    "start": "npx serve"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "firebase": "^11.6.0"
+  }
+}
