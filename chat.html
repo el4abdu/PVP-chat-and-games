@@ -241,5 +241,88 @@
     
     <!-- Custom scripts -->
     <script type="module" src="public/js/chat.js"></script>
+    
+    <!-- Modern UI Enhancements -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add custom scrollbar class to scrollable elements
+            document.querySelectorAll('.chat-messages, .chat-list, .emoji-panel').forEach(el => {
+                el.classList.add('custom-scrollbar');
+            });
+            
+            // Dark mode toggle
+            const darkModeToggle = document.createElement('button');
+            darkModeToggle.className = 'dark-mode-toggle';
+            darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            darkModeToggle.title = 'Toggle Dark Mode';
+            document.body.appendChild(darkModeToggle);
+            
+            // Check for user preference
+            const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if(prefersDarkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+            
+            // Toggle dark mode on click
+            darkModeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                if(currentTheme === 'dark') {
+                    document.documentElement.removeAttribute('data-theme');
+                    this.innerHTML = '<i class="fas fa-moon"></i>';
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    this.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+            });
+            
+            // Mobile sidebar toggle
+            const mobileToggle = document.createElement('button');
+            mobileToggle.className = 'mobile-toggle-btn';
+            mobileToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            const chatHeader = document.querySelector('.chat-header');
+            const chatSidebar = document.querySelector('.chat-sidebar');
+            
+            if(window.innerWidth <= 768) {
+                chatHeader.prepend(mobileToggle);
+                
+                mobileToggle.addEventListener('click', function() {
+                    chatSidebar.classList.toggle('active');
+                });
+                
+                // Close sidebar when clicking outside
+                document.addEventListener('click', function(e) {
+                    if(!chatSidebar.contains(e.target) && e.target !== mobileToggle) {
+                        chatSidebar.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Make textarea auto-expand
+            const messageInput = document.getElementById('message-input');
+            if(messageInput) {
+                messageInput.classList.add('auto-expand');
+                messageInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                });
+            }
+            
+            // Add floating action button for mobile
+            if(window.innerWidth <= 768) {
+                const fab = document.createElement('button');
+                fab.className = 'fab pulse-badge';
+                fab.innerHTML = '<i class="fas fa-plus"></i>';
+                document.body.appendChild(fab);
+                
+                fab.addEventListener('click', function() {
+                    const newChatBtn = document.getElementById('new-chat-btn');
+                    if(newChatBtn) {
+                        newChatBtn.click();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html> 
